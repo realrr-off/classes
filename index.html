@@ -1,0 +1,120 @@
+
+<style>
+.cls-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;cursor:pointer;transition:background 0.15s}
+.cls-card:hover{background:var(--color-background-secondary)}
+.cls-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cls-name{font-size:14px;font-weight:500;color:var(--color-text-primary)}
+.cls-role{font-size:11px;color:var(--color-text-secondary);text-align:right;max-width:55%}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.bar-label{font-size:11px;color:var(--color-text-secondary);width:28px;text-align:right;flex-shrink:0}
+.bar-track{flex:1;height:7px;background:var(--color-background-tertiary);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px}
+.bar-pct{font-size:11px;color:var(--color-text-secondary);width:30px;flex-shrink:0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.filter-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.pill{font-size:12px;padding:4px 12px;border-radius:20px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);cursor:pointer;transition:all 0.15s}
+.pill.active{background:var(--color-background-secondary);color:var(--color-text-primary);border-color:var(--color-border-primary)}
+.count{font-size:12px;color:var(--color-text-secondary);margin-bottom:10px}
+</style>
+
+<div style="padding:4px 0 8px">
+<div class="filter-row" id="filters"></div>
+<div class="count" id="count"></div>
+<div class="grid" id="grid"></div>
+</div>
+
+<script>
+const C = {
+  STR:'#D85A30', DEX:'#378ADD', INT:'#534AB7',
+  ARC:'#1D9E75', CHA:'#BA7517', END:'#639922', AGI:'#888780'
+};
+
+const classes = [
+  {name:'Warrior',      role:'Heavy frontliner',      stats:{STR:45,END:35,AGI:20}},
+  {name:'Vanguard',     role:'Rush tank',              stats:{STR:35,END:35,AGI:30}},
+  {name:'Scout',        role:'Mobile skirmisher',      stats:{DEX:40,AGI:40,CHA:20}},
+  {name:'Rogue',        role:'Stealth & deception',    stats:{DEX:35,CHA:35,AGI:30}},
+  {name:'Windwalker',   role:'Evasive trickster',      stats:{AGI:40,DEX:35,CHA:25}},
+  {name:'Trickshot',    role:'Lucky speedster',        stats:{CHA:40,AGI:35,DEX:25}},
+  {name:'Mage',         role:'Ranged spellcaster',     stats:{INT:50,ARC:35,AGI:15}},
+  {name:'Runekeeper',   role:'Arcane fortress',        stats:{INT:35,ARC:35,END:30}},
+  {name:'Spellblade',   role:'Magic melee',            stats:{STR:35,ARC:35,DEX:30}},
+  {name:'Battlemage',   role:'Tanky caster',           stats:{INT:35,END:35,STR:30}},
+  {name:'Shadowmancer', role:'Stealth caster',         stats:{ARC:35,DEX:35,CHA:30}},
+  {name:'Hexblade',     role:'Cursed duelist',         stats:{CHA:40,DEX:35,ARC:25}},
+  {name:'Arcane Knight',role:'Balanced all-rounder',   stats:{STR:25,INT:20,ARC:20,END:20,AGI:15}},
+  {name:'Fate Dancer',  role:'Chaos incarnate',        stats:{CHA:25,AGI:25,DEX:20,ARC:20,INT:10}},
+  {name:'Bulwark Eternal',role:'Unkillable',           stats:{END:30,STR:25,AGI:20,CHA:15,DEX:10}},
+  {name:'Ironclad',     role:'Pure END tank',          stats:{END:60,STR:25,AGI:15}},
+  {name:'Colossus',     role:'Unstoppable juggernaut', stats:{END:45,STR:40,AGI:15}},
+  {name:'Citadel',      role:'Immovable fortress',     stats:{END:55,ARC:25,INT:20}},
+  {name:'Warden',       role:'Enduring protector',     stats:{END:40,CHA:35,STR:25}},
+  {name:'Stoneguard',   role:'Earthbound defender',    stats:{END:50,STR:30,DEX:20}},
+  {name:'Zephyr',       role:'Pure speed striker',     stats:{AGI:55,DEX:30,CHA:15}},
+  {name:'Blur',         role:'Untouchable dasher',     stats:{AGI:60,DEX:25,INT:15}},
+  {name:'Flashstep',    role:'Blink assassin',         stats:{AGI:45,DEX:35,ARC:20}},
+  {name:'Dervish',      role:'Spinning speedfighter',  stats:{AGI:40,STR:35,DEX:25}},
+  {name:'Quickdraw',    role:'Fast-draw duelist',      stats:{AGI:40,DEX:40,CHA:20}},
+  {name:'Gambler',      role:'All-in risk taker',      stats:{CHA:55,AGI:25,DEX:20}},
+  {name:'Charlatan',    role:'Fake it till you make it',stats:{CHA:50,INT:30,DEX:20}},
+  {name:'Jinx',         role:'Cursed & lucky',         stats:{CHA:45,ARC:35,AGI:20}},
+  {name:'Oracle',       role:'Fate manipulator',       stats:{CHA:40,INT:35,ARC:25}},
+  {name:'Wildcard',     role:'Unpredictable chaos',    stats:{CHA:35,AGI:30,ARC:20,DEX:15}},
+  {name:'Voidcaller',   role:'Dark ARC caster',        stats:{ARC:55,INT:30,CHA:15}},
+  {name:'Arcanist',     role:'Short-range arcane',     stats:{ARC:60,DEX:25,AGI:15}},
+  {name:'Spellweaver',  role:'Multi-school magic',     stats:{ARC:40,INT:40,END:20}},
+  {name:'Runebinder',   role:'Enchantment specialist', stats:{ARC:45,INT:35,STR:20}},
+  {name:'Hexwarden',    role:'Magic tank',             stats:{ARC:40,END:40,CHA:20}},
+  {name:'Mirrorwitch',  role:'Spell reflector',        stats:{ARC:35,INT:30,CHA:25,AGI:10}},
+  {name:'Dreadnought',  role:'Siege machine',          stats:{STR:40,END:40,ARC:20}},
+  {name:'Phantomblade', role:'Ghost melee fighter',    stats:{DEX:30,AGI:30,ARC:25,CHA:15}},
+  {name:'Gravecaller',  role:'Death magic hybrid',     stats:{INT:30,ARC:30,CHA:25,END:15}},
+  {name:'Stormcaller',  role:'Lightning speed mage',   stats:{AGI:30,INT:30,ARC:25,DEX:15}},
+  {name:'Soulbreaker',  role:'Willpower destroyer',    stats:{CHA:30,INT:30,END:25,ARC:15}},
+  {name:'Ironmage',     role:'Armoured spellcaster',   stats:{END:30,ARC:30,STR:25,INT:15}},
+];
+
+const statKeys = ['STR','DEX','INT','ARC','CHA','END','AGI'];
+let active = 'All';
+
+function dominant(cls) {
+  return Object.entries(cls.stats).sort((a,b)=>b[1]-a[1])[0][0];
+}
+
+function renderFilters() {
+  const tags = ['All',...statKeys];
+  const el = document.getElementById('filters');
+  el.innerHTML = tags.map(t =>
+    `<span class="pill${active===t?' active':''}" onclick="setFilter('${t}')">${t}</span>`
+  ).join('');
+}
+
+function setFilter(tag) {
+  active = tag;
+  renderFilters();
+  renderGrid();
+}
+
+function renderGrid() {
+  const filtered = active === 'All'
+    ? classes
+    : classes.filter(c => Object.keys(c.stats).includes(active));
+  document.getElementById('count').textContent = filtered.length + ' classes';
+  document.getElementById('grid').innerHTML = filtered.map(c => {
+    const bars = Object.entries(c.stats).map(([s,v]) =>
+      `<div class="bar-row">
+        <span class="bar-label">${s}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${v}%;background:${C[s]}"></div></div>
+        <span class="bar-pct">${v}%</span>
+      </div>`
+    ).join('');
+    return `<div class="cls-card" onclick="sendPrompt('Give me ability ideas for the ${c.name} class')">
+      <div class="cls-header"><span class="cls-name">${c.name}</span><span class="cls-role">${c.role}</span></div>
+      ${bars}
+    </div>`;
+  }).join('');
+}
+
+renderFilters();
+renderGrid();
+</script>
